@@ -1,1 +1,2 @@
 # JavaNotes
+## Effective Java
