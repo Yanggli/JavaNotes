@@ -1,8 +1,27 @@
 > Effective Java - Third Edition
-> --<cite> Joshua Bloch </cite>
-> --<cite> Read by Yang Li </cite>
+> -- <cite> Joshua Bloch </cite>
+> -- <cite> Read by Yang Li </cite>
 
-[toc]
+
+<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [Creating and Destroying Objects](#creating-and-destroying-objects)
+  - [Item 1: Consider static factory methods instead of constructors](#item-1-consider-static-factory-methods-instead-of-constructors)
+  - [Item 2: Consider a builder when faced with many constructor parameters](#item-2-consider-a-builder-when-faced-with-many-constructor-parameters)
+  - [Item 3: Enforce the singleton property with a private constructor or an enum type](#item-3-enforce-the-singleton-property-with-a-private-constructor-or-an-enum-type)
+  - [Item 4: Enforce non-instantiability with a private constructor](#item-4-enforce-non-instantiability-with-a-private-constructor)
+  - [Item 5: Prefer dependency injection to hardwiring resources](#item-5-prefer-dependency-injection-to-hardwiring-resources)
+  - [Item 6: Avoid creating unnecessary objects](#item-6-avoid-creating-unnecessary-objects)
+  - [Item 7: Eliminate obsolete object references](#item-7-eliminate-obsolete-object-references)
+  - [Item 8: Avoid finalizers and cleaners](#item-8-avoid-finalizers-and-cleaners)
+  - [Item 9: Prefer try-with-resources to try-finally](#item-9-prefer-try-with-resources-to-try-finally)
+- [Methods Common to All Objects](#methods-common-to-all-objects)
+  - [Item 10: Obey the general contract when overriding equals](#item-10-obey-the-general-contract-when-overriding-equals)
+
+<!-- /code_chunk_output -->
+
 
 # Creating and Destroying Objects
 
@@ -369,7 +388,7 @@ class Test2 {
 Problem: lack of compile-time guarantee. `builder2.getServings()` will throw NPE.
 Solution: use @NonNull. When running it, it will check the parameter.
 
-### Builder with hierarchies
+**Builder with hierarchies**
 ```java
 public class People {
     private String name;
@@ -713,7 +732,7 @@ str  = null;
 
 ## Item 8: Avoid finalizers and cleaners
 
-### Finalizers
+**Finalizers**
 
 *Finalizers* is finalize() function that to release resources used by objects before they're removed from the memory. 
 ```java
@@ -823,3 +842,7 @@ try (Scanner scanner = new Scanner(new File("testRead.txt"));
     }
 }
 ```
+
+# Methods Common to All Objects
+
+## Item 10: Obey the general contract when overriding equals
