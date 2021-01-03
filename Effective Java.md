@@ -1,3 +1,7 @@
+> Effective Java - Third Edition
+> --<cite> Joshua Bloch </cite>
+> --<cite> Read by Yang Li </cite>
+
 [toc]
 
 # Creating and Destroying Objects
@@ -228,12 +232,12 @@ JavaBeans has its own disadvantages.
 ```java
 public class NutritionFacts {
     // parameters initialized to default values
-    private final int servingSize = -1; 
-    private final int servings = -1; 
-    private final int calories = 0; 
-    private final int fat = 0; 
-    private final int sodium = 0; 
-    private final int carbohydrate = 0;
+    private int servingSize; 
+    private int servings; 
+    private int calories; 
+    private int fat; 
+    private int sodium; 
+    private int carbohydrate;
 
     public NutritionFacts(){}
 
@@ -256,35 +260,261 @@ public class NutritionFacts {
 
 The third one is <u> *Builder* </u> pattern. The client calls a constructor with all of thr required parameters and gets a <u> builder object </u> .
 ```java
-public class Person {
-    private String name;
-    private String age;
+public class NutritionFactsBuilder {
+    private int servingSize;
+    private int servings;
+    // ... ...
 
-    public Person withName(String name) {
-        this.name = name;
+    public NutritionFactsBuilder withServingSize(int servingSize) {
+        this.servingSize = servingSize;
         return this;
     }
 
-    public Person withAge(String age) {
-        this.age = age;
+    public NutritionFactsBuilder withServings(int servings) {
+        this.servings = servings;
         return this;
     }
 
-    public Person build() {
-        return new Person();
+    public NutritionFactsBuilder build() {
+        return new NutritionFactsBuilder();
     }
-    
+}
+
+class Test {
     public static void main(String[] args) {
-        Person p = new Person().withName("Test").build();
+        NutritionFactsBuilder nutritionFactsBuilder = new NutritionFactsBuilder().withServings(1).withServingSize(1).build();
+        System.out.println(nutritionFactsBuilder);
     }
 }
 ```
 
-Problem: lack of compile-time guarantee. `p.getAge().equals(18)` will throw NPE.
+```java
+public class NutritionFactsBuilder2 {
+    private final int servingSize;
+    private final int servings;
+    
+    public static class Builder{
+        private final int servingSize;
+        private int servings;
+        
+        public Builder(int servingSize) {
+            this.servingSize = servingSize;
+        }
+        
+        public Builder withServings(int servings) {
+            this.servings = servings;
+            return this;
+        }
+        
+        public NutritionFactsBuilder2 build() {
+            return new NutritionFactsBuilder2(this);
+        }
+    }
+    
+    private NutritionFactsBuilder2(Builder builder) {
+        servingSize = builder.servingSize;
+        servings = builder.servings;
+    }
+}
+
+class Test2 {
+    public static void main(String[] args) {
+        NutritionFactsBuilder2 builder2 = new NutritionFactsBuilder2.Builder(240).build();
+    }
+}
+
+```
+
+```java
+public class NutritionFactsBuilder2 {
+    private final int servingSize;
+    private final int servings;
+
+    public static class Builder{
+        private int servingSize;
+        private int servings;
+
+        public Builder() {
+
+        }
+
+        public Builder withServings(int servings) {
+            this.servings = servings;
+            return this;
+        }
+
+        public NutritionFactsBuilder2 build() {
+            return new NutritionFactsBuilder2(this);
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    private NutritionFactsBuilder2(Builder builder) {
+        servingSize = builder.servingSize;
+        servings = builder.servings;
+    }
+}
+
+class Test2 {
+    public static void main(String[] args) {
+        NutritionFactsBuilder2 builder21 = NutritionFactsBuilder2.builder().build();
+    }
+}
+
+```
+
+Problem: lack of compile-time guarantee. `builder2.getServings()` will throw NPE.
 Solution: use @NonNull. When running it, it will check the parameter.
 
-**TODO: Builder with hierarchies**
+### Builder with hierarchies
+```java
+public class People {
+    private String name;
+    private int age;
 
+    protected People(Builder<?> builder) {
+        this.name = builder.name;
+        this.age = builder.age;
+    }
+
+    @Override
+    public String toString() {
+        return "name: " + this.name + ", age: " + this.age;
+    }
+
+    public static Builder builder() {
+        return new Builder() {
+            @Override
+            public Builder getThis() {
+                return this;
+            }
+        };
+    }
+
+    public abstract static class Builder<T extends Builder<T>> {
+        private String name;
+        private int age;
+
+        public abstract T getThis();
+
+        public T name(String name) {
+            this.name = name;
+            return this.getThis();
+        }
+
+        public T age(int age) {
+            this.age = age;
+            return this.getThis();
+        }
+
+        public People build() {
+            return new People(this);
+        }
+    }
+
+}
+
+class Student extends People {
+
+    private String school;
+
+    public Student(Builder builder) {
+        super(builder);
+        this.school = builder.school;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + ", school: " + this.school;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder extends People.Builder<Builder> {
+        private String school;
+
+        @Override
+        public Builder getThis() {
+            return this;
+        }
+
+        public Builder school(String school) {
+            this.school = school;
+            return this;
+        }
+
+        public Student build() {
+            return new Student(this);
+        }
+    }
+}
+
+class Test3{
+    public static void main(String[] args) {
+        Student student= Student.builder()
+                .name("student")
+                .age(18)
+                .school("ABC")
+                .build();
+        System.out.println(student.toString());
+
+        People people = People.builder()
+                .name("teacher")
+                .age(20)
+                .build();
+        System.out.println(people.toString());
+    }
+}
+```
+
+When we implement `Student.class`, all properties of `Student.class` must be implemented before calling parents field. If we use the wrong order, IDE will warning some errors.
+
+**Annotation**
+* @Builder: do not use Builder pattern for the parent class
+
+```java
+// need to install plugins "Lombok"
+@Builder
+public class People {
+    private String name;
+    private int age;
+}
+
+@Builder
+class Student extends People{
+    private String tag;
+    Student(String name, int age, String tag) {
+        super(name, age);
+        this.tag = tag;
+    }
+}
+
+class Test {
+    public static void main(String[] args) {
+        People people = People.builder().age(18).name("test").build();
+    }
+}
+```
+
+* @SuperBuilder: works for all field, solve the problem in @Builder
+```java
+@SuperBuilder
+public class People {
+    private String name;
+    private int age;
+}
+
+@SuperBuilder
+class Student extends People{
+    private String tag;
+}
+```
+  
 ## Item 3: Enforce the singleton property with a private constructor or an enum type
 A singleton is simply a class that is instantiated exactly once. Three properties:
 * A private constructor
@@ -485,7 +715,7 @@ str  = null;
 
 ### Finalizers
 
-<u> *Finalizers* </u> is finalize() function that to release resources used by objects before they're removed from the memory. 
+*Finalizers* is finalize() function that to release resources used by objects before they're removed from the memory. 
 ```java
 // Called by the garbage collector on an object when garbage collection
 // determines that there are no more references to the object.
@@ -559,4 +789,37 @@ In C++, destructors are the normal way to reclaim the resources associated with 
 * server performance: increase running time. (cleaner is better.)
 * finalizers open your class up to finalizer attacks.
 
+**TODO: rest tips for not using finalizers and cleaners.**
 
+## Item 9: Prefer try-with-resources to try-finally
+The Java libraries include many resources that must be closed manually by invoking a `close` method. Historically, `try-finally` is a good way to close the resources. However, when we open multiple resources, the code would be ugly. And also, if exceptions are thrown by two resources, we can only get the second one. It become harder to catch the first exception.
+```java
+try {
+    // open resource
+} finally {
+    // close it
+}
+```
+
+```java
+try {
+    // open resource 1
+    try {
+        // open resource 2
+    } finally{
+        // close resource 2
+    }
+} finally {
+    // close resource 1
+}
+```
+
+Use `try-with-resources` will solve the problem. If you write a class that represents a resource that must be closed, should implement `AutoCloseable`.
+```java
+try (Scanner scanner = new Scanner(new File("testRead.txt"));
+    PrintWriter writer = new PrintWriter(new File("testWrite.txt"))) {
+    while (scanner.hasNext()) {
+	writer.print(scanner.nextLine());
+    }
+}
+```
